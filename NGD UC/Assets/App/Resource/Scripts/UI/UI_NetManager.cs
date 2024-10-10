@@ -4,44 +4,51 @@ using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.UI;
 
-public class UI_NetManager : MonoBehaviour
+public class UI_NetManager : NetworkBehaviour
 {
-   [SerializeField] private Button _serverBtn, _clientBtn, _hostBtn, _startBtn;
 
-   [SerializeField] private GameObject _connectionBttnGroup;
+    [SerializeField] private Button _serverBttn, _clientBttn, _hostBttn, _startBttn;
 
-   [SerializeField] private SpawnController _mySpawnController;
+    [SerializeField] private GameObject _connectionBttnGroup;
 
-void Start()
-{
-    _startBtn.gameObject.SetActive(false);
-    _serverBtn.onClick.AddListener(OnServerBtnClicked);
-    _clientBtn.onClick.AddListener(OnClientBtnClicked);
-    _hostBtn.onClick.AddListener(OnHostBtnClicked);
-    _startBtn.onClick.AddListener(OnStartBtnClicked);
-}
+    [SerializeField] private SpawnController _mySpawnController;
 
-private void OnServerBtnClicked()
-{
-    NetworkManager.Singleton.StartServer();
-      _connectionBttnGroup.SetActive(false);
-      _startBtn.gameObject.SetActive(true);
-}
-private void OnClientBtnClicked()
-{
-    NetworkManager.Singleton.StartClient();
-      _connectionBttnGroup.SetActive(false);
+    void Start()
+    {
+        _startBttn.gameObject.SetActive(false);
+        if (_hostBttn != null) _hostBttn.onClick.AddListener(Hostclick);
+        if (_clientBttn != null) _clientBttn.onClick.AddListener(ClientClick);
+        if (_serverBttn != null) _serverBttn.onClick.AddListener(ServerClick);
+        if (_startBttn != null) _startBttn.onClick.AddListener(StartClick);
+    }
 
-}
-private void OnHostBtnClicked()
-{
-    NetworkManager.Singleton.StartHost();
-    _connectionBttnGroup.SetActive(false);
-    _startBtn.gameObject.SetActive(true);
-}
-private void OnStartBtnClicked()
-{
-    _mySpawnController.SpawnAllPlayers();
-    _startBtn.gameObject.SetActive(false);
-}
+    private void StartClick()
+    {
+       if (IsServer)
+       {
+           _mySpawnController.SpawnAllPlayers();
+           _startBttn.gameObject.SetActive(false);
+       }
+    }
+
+
+    private void ServerClick()
+    {
+        NetworkManager.Singleton.StartServer();    
+        _connectionBttnGroup.SetActive(false);
+        _startBttn.gameObject.SetActive(true);
+    }
+    
+    private void ClientClick()
+    {
+       NetworkManager.Singleton.StartClient();     
+       _connectionBttnGroup.SetActive(false);
+    }
+
+    private void Hostclick()
+    {
+        NetworkManager.Singleton.StartHost();        
+        _connectionBttnGroup.SetActive(false);
+        _startBttn.gameObject.SetActive(true);
+    }
 }

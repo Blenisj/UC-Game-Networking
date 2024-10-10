@@ -17,56 +17,73 @@ public class SpawnController : NetworkBehaviour
     [SerializeField]
     private TMP_Text _countTxt;
 
+
     public override void OnNetworkSpawn()
     {
+
         base.OnNetworkSpawn();
-        if (IsServer)
-        {
-            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnectedCallback;
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectedCallback;
-        }
-        _playerCount.OnValueChanged += PlayerCountChanged;
-    }
+        
+       if (IsServer)
+       {
+           NetworkManager.Singleton.OnConnectionEvent += OnConnectionEvent;
+       }
 
-    public override void OnNetworkDespawn()
-    {
-        base.OnNetworkDespawn();
-        if (IsServer)
-        {
-            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnectedCallback;
-            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectedCallback;
-        }
-        _playerCount.OnValueChanged -= PlayerCountChanged;
-    }
-
-    private void PlayerCountChanged(int previousValue, int newValue)
-    {
-        UpdateCountTextClientRpc(newValue);
-    }
-
-    [ClientRpc]
-    private void UpdateCountTextClientRpc(int newValue)
-    {
-        UpdateCountText(newValue);
-    }
-
-    private void UpdateCountText(int newValue)
-    {        
-        Debug.Log("Message From Client RPC");
-        _countTxt.text = $"Players : {newValue}"; 
-    }
-
-    private void OnClientConnectedCallback(ulong clientId)
-    {
-        _playerCount.Value++;
-    }
-
-    private void OnClientDisconnectedCallback(ulong clientId)
-    {
-        _playerCount.Value--;
+       _playerCount.OnValueChanged += PlayerCountChanged;
+        
     }
     
-     public void SpawnAllPlayers()
+    
+    public override void OnNetworkDespawn()
+    {
+        
+        base.OnNetworkDespawn();
+
+        if (IsServer)
+        {
+            NetworkManager.Singleton.OnConnectionEvent -= OnConnectionEvent;
+        }
+
+        _playerCount.OnValueChanged -= PlayerCountChanged;
+    }
+    
+    private void PlayerCountChanged(int previousvalue, int newvalue)
+    {
+        UpdateCountTextClientRpc(newvalue);
+    }
+
+
+    [Rpc(SendTo.Everyone)]
+    private void UpdateCountTextClientRpc(int newValue)
+    {
+        Debug.Log("Message From Client RPC");
+        UpdateCountText(newValue);
+    }
+    
+    
+
+    private void UpdateCountText(int newValue)
+    {
+        _countTxt.text = $"Players : {newValue}"; 
+
+    }
+    
+    private void OnConnectionEvent(NetworkManager netManager, ConnectionEventData eventData)
+    {
+
+        if (eventData.EventType == ConnectionEvent.ClientConnected)
+        {
+            _playerCount.Value++;
+        }
+
+        if (eventData.EventType == ConnectionEvent.ClientDisconnected)
+        {
+            _playerCount.Value--;
+        }
+        
+    }
+
+
+    public void SpawnAllPlayers()
     {
 
         if (!IsServer) return;
@@ -78,8 +95,12 @@ public class SpawnController : NetworkBehaviour
                 _spawnPoints[spawnNum].rotation);
             
             spawnedPlayerNO.SpawnAsPlayerObject(clientId);
+
             spawnNum++;
         }
 
     }
+
+
+    
 }

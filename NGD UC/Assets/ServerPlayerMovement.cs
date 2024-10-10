@@ -6,48 +6,49 @@ using Unity.Netcode;
 [RequireComponent(typeof(CharacterController))]
 public class ServerPlayerMovement : NetworkBehaviour
 {
+
     [SerializeField] private float _pSpeed;
     [SerializeField] private Transform _pTransform;
 
     public CharacterController _CC;
     private MyPlayerInputActions _playerInput;
-
-
-    void Start()
+    
+        void Start()
     {
-        _playerInput = new MyPlayerInputActions();
+        _playerInput = new();
         _playerInput.Enable();
     }
 
     void Update()
     {
-        if (!IsOwner) return;
-
+        
+        if(!IsOwner) return;
         Vector2 moveInput = _playerInput.Player.Movement.ReadValue<Vector2>();
-
+        
         if (IsServer)
         {
             Move(moveInput);
         }
-        else if (IsClient)
+        else if (IsClient && !IsHost)
         {
             MoveServerRPC(moveInput);
         }
-
-
+        
     }
-
+    
     private void Move(Vector2 _input)
     {
-        Vector3 _moveDirection = _input.x * transform.right + _input.y * transform.forward;
-        _CC.Move(motion: _moveDirection * _pSpeed * Time.deltaTime);
-    }
+        Vector3 _moveDirection = _input.x * _pTransform.right + _input.y * _pTransform.forward;
 
-
-    [ServerRpc]
-    private void MoveServerRPC(Vector2 _input)
-    {
-        Move(_input);
+        _CC.Move(_moveDirection * _pSpeed * Time.deltaTime);
 
     }
+
+    [Rpc(SendTo.Server)]
+   private void MoveServerRPC(Vector2 _input)
+   {
+       Move(_input);
+   }
+    
+    
 }

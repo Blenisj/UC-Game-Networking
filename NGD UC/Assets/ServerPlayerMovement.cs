@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Components;
+
+
 [RequireComponent(typeof(CharacterController))]
 public class ServerPlayerMovement : NetworkBehaviour
 {
@@ -15,8 +17,19 @@ public class ServerPlayerMovement : NetworkBehaviour
     public CharacterController _CC;
     private MyPlayerInputActions _playerInput;
     
-        void Start()
+    void Start()
     {
+
+        if (_myAnimator == null)
+        {
+            _myAnimator = gameObject.GetComponent<Animator>();
+        }
+
+        if (_myNetAnimator == null)
+        {
+            _myNetAnimator = gameObject.GetComponent<NetworkAnimator>();
+        }
+        
         _playerInput = new();
         _playerInput.Enable();
     }

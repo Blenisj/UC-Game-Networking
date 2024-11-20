@@ -19,6 +19,7 @@ public class UI_NetManager : NetworkBehaviour
         if (_hostBttn != null) _hostBttn.onClick.AddListener(Hostclick);
         if (_clientBttn != null) _clientBttn.onClick.AddListener(ClientClick);
         if (_serverBttn != null) _serverBttn.onClick.AddListener(ServerClick);
+        if (_startBttn != null) _startBttn.onClick.AddListener(StartClick);
     }
 
     private void StartClick()
@@ -26,7 +27,14 @@ public class UI_NetManager : NetworkBehaviour
        if (IsServer)
        {
            _mySpawnController.SpawnAllPlayers();
+           HideGuiRpc();
        }
+    }
+    [Rpc(SendTo.Everyone)]
+
+    private void HideGuiRpc()
+    {
+        _socialPanel.SetActive(false);
     }
 
 

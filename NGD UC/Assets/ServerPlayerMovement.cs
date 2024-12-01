@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Components;
+using App.Resource.Scripts.Obj;
 
 
 [RequireComponent(typeof(CharacterController))]
@@ -11,8 +12,10 @@ public class ServerPlayerMovement : NetworkBehaviour
 
     [SerializeField] private Animator _myAnimator;
     [SerializeField] private NetworkAnimator _myNetAnimator;
+    [SerializeField] private BulletSpawner _bulletSpawner;
     [SerializeField] private float _pSpeed;
     [SerializeField] private Transform _pTransform;
+    Vector2 _moveDirection = new Vector3(0, 0f, 0);
 
     public CharacterController _CC;
     private MyPlayerInputActions _playerInput;
@@ -53,14 +56,19 @@ public class ServerPlayerMovement : NetworkBehaviour
         {
             MoveServerRPC(moveInput, IsJumping, IsPunching, IsRunning);
         }
+
+        if (IsPunching)
+        {
+            _bulletSpawner.FireProjectileRpc();
+        }
         
     }
     
     private void Move(Vector2 _input, bool isRunning, bool isJumping, bool isPunching)
     {
-        Vector3 _moveDirection = _input.x * _pTransform.right + _input.y * _pTransform.forward;
+        _moveDirection = new Vector3(_input.x, 0f, _input.y);
 
-        _myAnimator.SetBool("IsWalking", _moveDirection.z != 0 || _moveDirection.x != 0);
+        _myAnimator.SetBool("IsWalking", _input.x != 0 || _input.y != 0);
 
         if (isJumping){ _myNetAnimator.SetTrigger("JumpTrigger");}
         if (isPunching){ _myNetAnimator.SetTrigger("PunchTrigger");}
@@ -72,6 +80,8 @@ public class ServerPlayerMovement : NetworkBehaviour
         else{
             _CC.Move(_moveDirection * _pSpeed * Time.deltaTime);
         }
+
+        _pTransform.forward = _moveDirection;
         
 
     }

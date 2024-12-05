@@ -9,10 +9,10 @@ public class UI_NetManager : NetworkBehaviour
 
     [SerializeField] private Button _serverBttn, _clientBttn, _hostBttn, _startBttn;
 
-    [SerializeField] private GameObject _connectionBttnGroup;
+    [SerializeField] private GameObject _connectionBttnGroup, _socialPanel;
 
     [SerializeField] private SpawnController _mySpawnController;
-
+    
     void Start()
     {
         _startBttn.gameObject.SetActive(false);
@@ -27,28 +27,47 @@ public class UI_NetManager : NetworkBehaviour
        if (IsServer)
        {
            _mySpawnController.SpawnAllPlayers();
-           _startBttn.gameObject.SetActive(false);
+           HideGuiRpc();
        }
+    }
+    [Rpc(SendTo.Everyone)]
+
+    private void HideGuiRpc()
+    {
+        _socialPanel.SetActive(false);
     }
 
 
     private void ServerClick()
     {
-        NetworkManager.Singleton.StartServer();    
-        _connectionBttnGroup.SetActive(false);
-        _startBttn.gameObject.SetActive(true);
+      var isSuccesfull =  NetworkManager.Singleton.StartServer();     
+
+      if (isSuccesfull)
+      {
+          _connectionBttnGroup.SetActive(false);
+          _socialPanel.SetActive(true);
+      }
+       // _startBttn.gameObject.SetActive(true);
     }
     
     private void ClientClick()
     {
-       NetworkManager.Singleton.StartClient();     
-       _connectionBttnGroup.SetActive(false);
+        var isSuccesfull = NetworkManager.Singleton.StartClient();    
+        if (isSuccesfull)
+        {
+            _connectionBttnGroup.SetActive(false);
+            _socialPanel.SetActive(true);
+        }
     }
 
     private void Hostclick()
     {
-        NetworkManager.Singleton.StartHost();        
-        _connectionBttnGroup.SetActive(false);
-        _startBttn.gameObject.SetActive(true);
+        var isSuccesfull = NetworkManager.Singleton.StartHost();     
+        if (isSuccesfull)
+        {
+            _connectionBttnGroup.SetActive(false);
+            _socialPanel.SetActive(true);
+        }
+
     }
 }

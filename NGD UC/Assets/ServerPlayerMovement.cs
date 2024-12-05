@@ -2,52 +2,84 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
+using Unity.Netcode.Components;
+
 
 [RequireComponent(typeof(CharacterController))]
 public class ServerPlayerMovement : NetworkBehaviour
 {
 
+    [SerializeField] private Animator _myAnimator;
+    [SerializeField] private NetworkAnimator _myNetAnimator;
     [SerializeField] private float _pSpeed;
     [SerializeField] private Transform _pTransform;
 
     public CharacterController _CC;
     private MyPlayerInputActions _playerInput;
     
-        void Start()
+    void Start()
     {
+
+        if (_myAnimator == null)
+        {
+            _myAnimator = gameObject.GetComponent<Animator>();
+        }
+
+        if (_myNetAnimator == null)
+        {
+            _myNetAnimator = gameObject.GetComponent<NetworkAnimator>();
+        }
+        
         _playerInput = new();
         _playerInput.Enable();
     }
 
-    void Update()
+    void FixedUpdate()
     {
         
         if(!IsOwner) return;
         Vector2 moveInput = _playerInput.Player.Movement.ReadValue<Vector2>();
+
+        bool IsJumping = _playerInput.Player.Jumping.triggered;
+        bool IsPunching = _playerInput.Player.Punching.triggered;
+        bool IsRunning = _playerInput.Player.Running.triggered;
+
         
         if (IsServer)
         {
-            Move(moveInput);
+            Move(moveInput, IsJumping, IsPunching, IsRunning);
         }
         else if (IsClient && !IsHost)
         {
-            MoveServerRPC(moveInput);
+            MoveServerRPC(moveInput, IsJumping, IsPunching, IsRunning);
         }
         
     }
     
-    private void Move(Vector2 _input)
+    private void Move(Vector2 _input, bool isRunning, bool isJumping, bool isPunching)
     {
         Vector3 _moveDirection = _input.x * _pTransform.right + _input.y * _pTransform.forward;
 
-        _CC.Move(_moveDirection * _pSpeed * Time.deltaTime);
+        _myAnimator.SetBool("IsWalking", _moveDirection.z != 0 || _moveDirection.x != 0);
+
+        if (isJumping){ _myNetAnimator.SetTrigger("JumpTrigger");}
+        if (isPunching){ _myNetAnimator.SetTrigger("PunchTrigger");}
+
+        _myAnimator.SetBool("IsRunning", isRunning);
+        if (isRunning){
+            _CC.Move(_moveDirection * (_pSpeed * 1.3f) * Time.deltaTime);
+        }
+        else{
+            _CC.Move(_moveDirection * _pSpeed * Time.deltaTime);
+        }
+        
 
     }
 
     [Rpc(SendTo.Server)]
-   private void MoveServerRPC(Vector2 _input)
+   private void MoveServerRPC(Vector2 _input, bool isRunning, bool isJumping, bool isPunching)
    {
-       Move(_input);
+       Move(_input, isJumping, isPunching, isRunning);
    }
     
     

@@ -233,7 +233,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 287534205
+  GlobalObjectIdHash: 3770868637
   InScenePlacedSourceGlobalObjectIdHash: 3770868637
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -257,7 +257,7 @@ MonoBehaviour:
   _myAnimator: {fileID: 1681715181427913478}
   _myNetAnimator: {fileID: 7502790036465561406}
   _bulletSpawner: {fileID: 6309543177383840903}
-  _pSpeed: 1
+  _pSpeed: 4
   _pTransform: {fileID: 1281215531421794582}
   _CC: {fileID: 7424566232192034575}
 --- !u!143 &7424566232192034575

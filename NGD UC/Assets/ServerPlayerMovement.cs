@@ -5,92 +5,92 @@ using Unity.Netcode;
 using Unity.Netcode.Components;
 using App.Resource.Scripts.Obj;
 
-
-[RequireComponent(typeof(CharacterController))]
-public class ServerPlayerMovement : NetworkBehaviour
+namespace App.Resource.Scripts.Player
 {
-
-    [SerializeField] private Animator _myAnimator;
-    [SerializeField] private NetworkAnimator _myNetAnimator;
-    [SerializeField] private BulletSpawner _bulletSpawner;
-    [SerializeField] private float _pSpeed;
-    [SerializeField] private Transform _pTransform;
-    Vector2 _moveDirection = new Vector3(0, 0f, 0);
-
-    public CharacterController _CC;
-    private MyPlayerInputActions _playerInput;
-    
-    void Start()
+    [RequireComponent(typeof(CharacterController))]
+    public class ServerPlayerMovement : NetworkBehaviour
     {
+        [SerializeField] private Animator _myAnimator;
+        [SerializeField] private NetworkAnimator _myNetAnimator;
+        [SerializeField] private BulletSpawner _bulletSpawner;
+        [SerializeField] private float _pSpeed;
+        [SerializeField] private Transform _pTransform;
+        Vector3 _moveDirection = Vector3.zero;
 
-        if (_myAnimator == null)
+        public CharacterController _CC;
+        private MyPlayerInputActions _playerInput;
+
+        void Start()
         {
-            _myAnimator = gameObject.GetComponent<Animator>();
+            if (_myAnimator == null)
+            {
+                _myAnimator = gameObject.GetComponent<Animator>();
+            }
+
+            if (_myNetAnimator == null)
+            {
+                _myNetAnimator = gameObject.GetComponent<NetworkAnimator>();
+            }
+
+            _playerInput = new MyPlayerInputActions();
+            _playerInput.Enable();
         }
 
-        if (_myNetAnimator == null)
+        void FixedUpdate()
         {
-            _myNetAnimator = gameObject.GetComponent<NetworkAnimator>();
+            if (!IsOwner) return;
+
+            Vector2 moveInput = _playerInput.Player.Movement.ReadValue<Vector2>();
+            moveInput = moveInput.normalized;
+
+            bool isJumping = _playerInput.Player.Jumping.triggered;
+            bool isPunching = _playerInput.Player.Punching.triggered;
+            bool isRunning = _playerInput.Player.Running.triggered;
+
+            if (IsServer)
+            {
+                Move(moveInput, isRunning, isJumping, isPunching);
+            }
+            else if (IsClient && !IsHost)
+            {
+                MoveServerRpc(moveInput, isRunning, isJumping, isPunching);
+            }
+
+            if (isPunching)
+            {
+                _bulletSpawner.FireProjectileRpc();
+            }
         }
-        
-        _playerInput = new();
-        _playerInput.Enable();
+
+        private void Move(Vector2 input, bool isRunning, bool isJumping, bool isPunching)
+        {
+            _moveDirection = new Vector3(input.x, 0f, input.y);
+
+            _myAnimator.SetBool("IsWalking", _moveDirection.z != 0 || _moveDirection.x != 0);
+
+            if (isJumping) { _myNetAnimator.SetTrigger("JumpTrigger"); }
+            if (isPunching) { _myNetAnimator.SetTrigger("PunchTrigger"); }
+
+            _myAnimator.SetBool("IsRunning", isRunning);
+            if (isRunning)
+            {
+                _CC.Move(_moveDirection * (_pSpeed * 1.3f) * Time.deltaTime);
+            }
+            else
+            {
+                _CC.Move(_moveDirection * _pSpeed * Time.deltaTime);
+            }
+
+            if (_moveDirection != Vector3.zero)
+            {
+                _pTransform.forward = _moveDirection;
+            }
+        }
+
+        [ServerRpc]
+        private void MoveServerRpc(Vector2 input, bool isRunning, bool isJumping, bool isPunching)
+        {
+            Move(input, isRunning, isJumping, isPunching);
+        }
     }
-
-    void FixedUpdate()
-    {
-        
-        if(!IsOwner) return;
-        Vector2 moveInput = _playerInput.Player.Movement.ReadValue<Vector2>();
-
-        bool IsJumping = _playerInput.Player.Jumping.triggered;
-        bool IsPunching = _playerInput.Player.Punching.triggered;
-        bool IsRunning = _playerInput.Player.Running.triggered;
-
-        
-        if (IsServer)
-        {
-            Move(moveInput, IsJumping, IsPunching, IsRunning);
-        }
-        else if (IsClient && !IsHost)
-        {
-            MoveServerRPC(moveInput, IsJumping, IsPunching, IsRunning);
-        }
-
-        if (IsPunching)
-        {
-            _bulletSpawner.FireProjectileRpc();
-        }
-        
-    }
-    
-    private void Move(Vector2 _input, bool isRunning, bool isJumping, bool isPunching)
-    {
-        _moveDirection = new Vector3(_input.x, 0f, _input.y);
-
-        _myAnimator.SetBool("IsWalking", _input.x != 0 || _input.y != 0);
-
-        if (isJumping){ _myNetAnimator.SetTrigger("JumpTrigger");}
-        if (isPunching){ _myNetAnimator.SetTrigger("PunchTrigger");}
-
-        _myAnimator.SetBool("IsRunning", isRunning);
-        if (isRunning){
-            _CC.Move(_moveDirection * (_pSpeed * 1.3f) * Time.deltaTime);
-        }
-        else{
-            _CC.Move(_moveDirection * _pSpeed * Time.deltaTime);
-        }
-
-        _pTransform.forward = _moveDirection;
-        
-
-    }
-
-    [Rpc(SendTo.Server)]
-   private void MoveServerRPC(Vector2 _input, bool isRunning, bool isJumping, bool isPunching)
-   {
-       Move(_input, isJumping, isPunching, isRunning);
-   }
-    
-    
 }

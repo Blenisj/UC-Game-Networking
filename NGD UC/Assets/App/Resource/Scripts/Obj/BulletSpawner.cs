@@ -17,7 +17,7 @@ namespace App.Resource.Scripts.Obj
 
         public void FireProjectileRpc (RpcParams rpcParams = default)
         {
-        if (_ammo.Value> 8)
+        if (_ammo.Value> 0)
         {
             NetworkObject newProjectile =
             NetworkManager. Instantiate (_ProjectilePrefab, _startingPoint.position, _startingPoint.rotation);
